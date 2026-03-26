@@ -240,15 +240,12 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 // === COMPANY SELECT ===
 function showCompanySelect(){
   const g=document.getElementById('company-grid');
-  const keys=['amazon','meta','google'];
+  const keys=['amazon','meta','google','generic'];
   let html='';
   for(const k of keys){
     const c=COMPANIES[k];
     html+=`<div class="company-btn" onclick="startGame('${k}')"><span class="logo">${c.logo}</span><span class="name">${esc(c.name)}</span><span class="tag">${esc(c.tagline)}</span></div>`;
   }
-  html+='<div class="company-divider"></div>';
-  const gen=COMPANIES.generic;
-  html+=`<div class="company-btn" style="grid-column:1/-1" onclick="startGame('generic')"><span class="logo">${gen.logo}</span><span class="name">${esc(gen.name)}</span><span class="tag">${esc(gen.tagline)}</span></div>`;
   g.innerHTML=html;
   show('company');
 }
