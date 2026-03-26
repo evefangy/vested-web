@@ -95,7 +95,9 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .card .opt-r{text-align:right;transition:color .2s}
 .card.swipe-right .opt-l{color:var(--cyan)}
 .card.swipe-left .opt-r{color:var(--orange)}
-.roast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--yellow);background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.12);border-radius:8px;padding:6px 14px;text-align:center;max-width:300px;opacity:0;transition:opacity .3s;pointer-events:none;width:max-content}
+.meta-banner{font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:800;letter-spacing:1.5px;color:var(--red);background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15);border-radius:6px;padding:3px 10px;text-align:center;width:100%;max-width:var(--maxw);margin-bottom:4px;display:none}
+.meta-banner.visible{display:block}
+.roast{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--yellow);background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.12);border-radius:8px;padding:6px 14px;text-align:center;max-width:300px;opacity:0;transition:opacity .3s;pointer-events:none;width:max-content}
 .roast.visible{opacity:1}
 
 /* Overlays */
@@ -154,6 +156,7 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 
 <!-- GAME -->
 <div id="game" class="screen">
+  <div class="meta-banner" id="meta-banner">META LAYOFF SEASON \u{1F525} LIMITED EDITION</div>
   <div class="game-header"><span class="week" id="week"></span><span class="stage" id="stage"></span></div>
   <div class="stats-row" id="stats"></div>
   <div class="promo-banner" id="promo"></div>
@@ -267,6 +270,11 @@ function startGame(company){
   let all=CARDS.filter(c=>!c.isTutorial);
   if(company==='generic'){all=all.filter(c=>!CPFX.some(p=>c.id.startsWith(p)))}
   else{all=all.filter(c=>!CPFX.some(p=>c.id.startsWith(p))||c.id.startsWith(COMPANIES[company]?.name?.toLowerCase()+'_')||c.id.startsWith(company+'_'))}
+  // Add Meta layoff cards (3x weight for higher appearance)
+  if(company==='meta'&&typeof META_LAYOFF_CARDS!=='undefined'){
+    all.push(...META_LAYOFF_CARDS,...META_LAYOFF_CARDS,...META_LAYOFF_CARDS);
+    document.getElementById('meta-banner').classList.add('visible');
+  }else{document.getElementById('meta-banner').classList.remove('visible')}
   dk=sh([...all]);used=new Set();pend=[];bst=0;
   show('game');renderStats();drawCard();
 }
