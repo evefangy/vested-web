@@ -71,7 +71,9 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .stage{font-size:.78rem;font-weight:700}
 .stats-row{display:flex;gap:14px;width:100%;justify-content:center;margin-bottom:8px}
 .stat{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
-.stat-icon{font-size:1.1rem}
+.stat-icon{font-size:1.1rem;cursor:pointer;position:relative}
+.stat-hint{position:absolute;top:-28px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text);background:var(--card-bg);border:1px solid var(--card-border);border-radius:6px;padding:2px 8px;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.stat-hint.show{opacity:1}
 .stat-bar{width:100%;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
 .stat-fill{height:100%;border-radius:3px;transition:width .4s cubic-bezier(.34,1.56,.64,1),background .3s}
 .stat-value{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);transition:color .3s,transform .15s}
@@ -86,6 +88,7 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .card.swipe-left{border-color:var(--orange)}
 .card.swipe-right{border-color:var(--cyan)}
 .card .expansion{font-family:'JetBrains Mono',monospace;font-size:.5rem;font-weight:800;letter-spacing:1.5px;color:var(--orange);padding:2px 8px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);border-radius:20px}
+.card .meta-edition{font-family:'JetBrains Mono',monospace;font-size:.5rem;font-weight:800;letter-spacing:1px;color:var(--red);padding:3px 10px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:20px}
 .card .character{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:2px}
 .card .scenario{font-size:.9rem;line-height:1.6}
 .card .scenario b{color:var(--yellow)}
@@ -95,13 +98,13 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .card .opt-r{text-align:right;transition:color .2s}
 .card.swipe-right .opt-l{color:var(--cyan)}
 .card.swipe-left .opt-r{color:var(--orange)}
-.meta-banner{font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:800;letter-spacing:1.5px;color:var(--red);background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15);border-radius:6px;padding:3px 10px;text-align:center;width:100%;max-width:var(--maxw);margin-bottom:4px;display:none}
-.meta-banner.visible{display:block}
-.roast{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--yellow);background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.12);border-radius:8px;padding:6px 14px;text-align:center;max-width:300px;opacity:0;transition:opacity .3s;pointer-events:none;width:max-content}
-.roast.visible{opacity:1}
+.roast-overlay{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:90;padding:40px}
+.roast-overlay.active{display:flex}
+.roast-text{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--yellow);text-align:center;line-height:1.6;max-width:300px;opacity:0;transition:opacity .3s}
+.roast-text.visible{opacity:1}
 
 /* Overlays */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;cursor:pointer}
+.overlay{position:fixed;inset:0;background:rgba(15,15,20,.95);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;cursor:pointer}
 .overlay.active{display:flex}
 .csq-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:18px;padding:28px;max-width:320px;text-align:center}
 .csq-box .lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:2px;color:rgba(248,113,113,.5);text-transform:uppercase;margin-bottom:14px}
@@ -156,14 +159,14 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 
 <!-- GAME -->
 <div id="game" class="screen">
-  <div class="meta-banner" id="meta-banner">META LAYOFF SEASON \u{1F525} LIMITED EDITION</div>
   <div class="game-header"><span class="week" id="week"></span><span class="stage" id="stage"></span></div>
   <div class="stats-row" id="stats"></div>
   <div class="promo-banner" id="promo"></div>
-  <div class="card-area"><div class="card" id="card"></div><div class="roast" id="roast"></div></div>
+  <div class="card-area"><div class="card" id="card"></div></div>
 </div>
 
 <!-- CONSEQUENCE -->
+<div class="roast-overlay" id="roast-overlay"><p class="roast-text" id="roast-text"></p></div>
 <div class="overlay" id="csq" onclick="dismissCsq()"><div class="csq-box"><div class="lbl">Remember that decision?</div><div class="txt" id="csq-txt"></div><div class="tap">tap to continue</div></div></div>
 <div class="tint" id="tint"></div>
 
@@ -270,8 +273,7 @@ function startGame(company){
   // Add Meta layoff cards (3x weight for higher appearance)
   if(company==='meta'&&typeof META_LAYOFF_CARDS!=='undefined'){
     all.push(...META_LAYOFF_CARDS,...META_LAYOFF_CARDS,...META_LAYOFF_CARDS);
-    document.getElementById('meta-banner').classList.add('visible');
-  }else{document.getElementById('meta-banner').classList.remove('visible')}
+  }
   dk=sh([...all]);used=new Set();pend=[];bst=0;
   show('game');renderStats();drawCard();
 }
@@ -290,8 +292,8 @@ function drawCard(){
 
 // === RENDER ===
 function renderStats(){
-  const s=[{k:'sanity',i:'\u{1F9E0}'},{k:'tc',i:'\u{1F4B0}'},{k:'reputation',i:'\u{1F451}'},{k:'stability',i:'\u{1F6E1}\u{FE0F}'}];
-  let h='';for(const x of s){const v=st[x.k],d=v<=15||v>=85,c=d?'var(--red)':v<=30||v>=70?'var(--orange)':'var(--green)';h+=`<div class="stat"><span class="stat-icon">${x.i}</span><div class="stat-bar"><div class="stat-fill" style="width:${v}%;background:${c}"></div></div><span class="stat-value${d?' danger':''}" id="sv-${x.k}">${v}</span></div>`}
+  const s=[{k:'sanity',i:'\u{1F9E0}',h:'0=burnout 100=too lucid'},{k:'tc',i:'\u{1F4B0}',h:'0=broke 100=trapped'},{k:'reputation',i:'\u{1F451}',h:'0=invisible 100=target'},{k:'stability',i:'\u{1F6E1}\u{FE0F}',h:'0=fired 100=stuck'}];
+  let h='';for(const x of s){const v=st[x.k],d=v<=15||v>=85,c=d?'var(--red)':v<=30||v>=70?'var(--orange)':'var(--green)';h+=`<div class="stat"><span class="stat-icon" onclick="toggleHint('hint-${x.k}')">${x.i}<span class="stat-hint" id="hint-${x.k}">${x.h}</span></span><div class="stat-bar"><div class="stat-fill" style="width:${v}%;background:${c}"></div></div><span class="stat-value${d?' danger':''}" id="sv-${x.k}">${v}</span></div>`}
   document.getElementById('stats').innerHTML=h;
   document.getElementById('week').textContent=`Week ${st.week}`;
   document.getElementById('stage').textContent=gs(st.week).n;
@@ -300,23 +302,43 @@ function renderStats(){
 function renderCard(card){
   const el=document.getElementById('card');
   const pol=card.id.startsWith('politics_');
+  const meta=card.id.startsWith('meta_layoff_');
   const sc=applyFlavor(card.scenario,co).replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
   const ch=applyFlavor(card.character,co);
   const ll=applyFlavor(card.leftOption.label,co);
   const rl=applyFlavor(card.rightOption.label,co);
-  el.innerHTML=`${pol?'<span class="expansion">OFFICE POLITICS</span>':''}<span class="character">${esc(ch)}</span><p class="scenario">${sc}</p><span class="hint">swipe to decide</span><div class="options"><span class="opt-l">\u2190 ${esc(ll)}</span><span class="opt-r">${esc(rl)} \u2192</span></div>`;
+  el.innerHTML=`${meta?'<span class="meta-edition">\u{1F525} META LAYOFF SEASON \u{1F525}</span>':pol?'<span class="expansion">OFFICE POLITICS</span>':''}<span class="character">${esc(ch)}</span><p class="scenario">${sc}</p><span class="hint">swipe to decide</span><div class="options"><span class="opt-l">\u2190 ${esc(ll)}</span><span class="opt-r">${esc(rl)} \u2192</span></div>`;
   el.className='card';el.style.transform='';el.style.opacity='1';el._c=card;
   setupSwipe(el);
 }
 
 function bounce(k){const e=document.getElementById('sv-'+k);if(!e)return;e.classList.add('bounce');setTimeout(()=>e.classList.remove('bounce'),150)}
+function toggleHint(id){const e=document.getElementById(id);if(!e)return;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1500)}
+function previewStats(effects){
+  if(!effects)return clearPreview();
+  const icons={sanity:'sv-sanity',tc:'sv-tc',reputation:'sv-reputation',stability:'sv-stability'};
+  for(const[k,id]of Object.entries(icons)){
+    const el=document.getElementById(id);if(!el)continue;
+    const d=effects[k]||0;
+    if(d>0)el.style.color='var(--green)';
+    else if(d<0)el.style.color='var(--red)';
+    else el.style.color='';
+  }
+}
+function clearPreview(){
+  for(const k of['sanity','tc','reputation','stability']){
+    const el=document.getElementById('sv-'+k);if(!el)continue;
+    const v=st[k],d=v<=15||v>=85;
+    el.style.color=d?'var(--red)':'';
+  }
+}
 
 // === SWIPE ===
 function setupSwipe(el){
   let sx=0,cx=0,dr=false;
   function oS(e){dr=true;sx=e.touches?e.touches[0].clientX:e.clientX;el.classList.add('dragging')}
-  function oM(e){if(!dr)return;e.preventDefault();const x=e.touches?e.touches[0].clientX:e.clientX;cx=x-sx;el.style.transform=`translateX(${cx}px) rotate(${cx/25}deg)`;el.classList.remove('swipe-left','swipe-right');if(cx>40)el.classList.add('swipe-right');else if(cx<-40)el.classList.add('swipe-left')}
-  function oE(){if(!dr)return;dr=false;el.classList.remove('dragging');if(Math.abs(cx)>80){const dir=cx>0?'left':'right';const fx=cx>0?500:-500;el.style.transition='transform .25s ease-out,opacity .25s';el.style.transform=`translateX(${fx}px) rotate(${fx/25}deg)`;el.style.opacity='0';setTimeout(()=>proc(dir,el._c),250)}else{el.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';el.style.transform='';el.classList.remove('swipe-left','swipe-right')}cx=0}
+  function oM(e){if(!dr)return;e.preventDefault();const x=e.touches?e.touches[0].clientX:e.clientX;cx=x-sx;el.style.transform=`translateX(${cx}px) rotate(${cx/25}deg)`;el.classList.remove('swipe-left','swipe-right');if(cx>40){el.classList.add('swipe-right');previewStats(el._c?.leftOption?.effects)}else if(cx<-40){el.classList.add('swipe-left');previewStats(el._c?.rightOption?.effects)}else{clearPreview()}}
+  function oE(){if(!dr)return;dr=false;el.classList.remove('dragging');clearPreview();if(Math.abs(cx)>80){const dir=cx>0?'left':'right';const fx=cx>0?500:-500;el.style.transition='transform .25s ease-out,opacity .25s';el.style.transform=`translateX(${fx}px) rotate(${fx/25}deg)`;el.style.opacity='0';setTimeout(()=>proc(dir,el._c),250)}else{el.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';el.style.transform='';el.classList.remove('swipe-left','swipe-right')}cx=0}
   el.onmousedown=oS;el.onmousemove=oM;el.onmouseup=oE;el.onmouseleave=oE;
   el.addEventListener('touchstart',oS,{passive:true});el.addEventListener('touchmove',oM,{passive:false});el.addEventListener('touchend',oE);
 }
@@ -340,9 +362,10 @@ function proc(dir,card){
   for(const c of pend){c.f--;if(c.f<=0){applyFx(c.effects);fired=c.description}else still.push(c)}
   pend.length=0;pend.push(...still);
   flashTint(opt.effects);renderStats();
+  // Show consequence first — death/win checked on dismiss
+  if(fired){document.getElementById('csq-txt').textContent=fired;document.getElementById('csq').classList.add('active');return}
   const death=chkDeath();if(death){showDeath(death);return}
   if(st.week>=WIN){showVictory();return}
-  if(fired){document.getElementById('csq-txt').textContent=fired;document.getElementById('csq').classList.add('active');return}
   const nw=gs(st.week);if(nw.id!==prev.id)showPromo(nw.n);
   if(opt.roast&&Math.random()<.25){showRoast(applyFlavor(opt.roast,co));return}
   drawCard();
@@ -353,7 +376,7 @@ function chkDeath(){for(const[k,l,h]of[['sanity','sanityLow','sanityHigh'],['tc'
 function flashTint(fx){const s=fx.sanity||0,b=fx.stability||0,r=fx.reputation||0;let c;if(s<=-5)c='rgba(251,146,60,.15)';else if(b<=-5)c='rgba(248,113,113,.15)';else if(s>=5)c='rgba(34,211,238,.15)';else if(r>=5)c='rgba(167,139,250,.15)';if(!c)return;const t=document.getElementById('tint');t.style.background=c;t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),300)}
 function dismissCsq(){document.getElementById('csq').classList.remove('active');const d=chkDeath();if(d){showDeath(d);return}if(st.week>=WIN){showVictory();return}drawCard()}
 function showPromo(n){const e=document.getElementById('promo');e.textContent='PROMOTED TO '+n.toUpperCase();e.classList.add('visible');setTimeout(()=>e.classList.remove('visible'),2000)}
-function showRoast(t){const e=document.getElementById('roast');e.textContent=t;e.classList.add('visible');setTimeout(()=>{e.classList.remove('visible');setTimeout(drawCard,300)},2500)}
+function showRoast(t){const o=document.getElementById('roast-overlay');const e=document.getElementById('roast-text');e.textContent=t;o.classList.add('active');setTimeout(()=>e.classList.add('visible'),50);setTimeout(()=>{e.classList.remove('visible');setTimeout(()=>{o.classList.remove('active');drawCard()},300)},2500)}
 
 // === END ===
 function endHTML(){return[{l:'SAN',v:st.sanity},{l:'TC',v:st.tc},{l:'REP',v:st.reputation},{l:'STB',v:st.stability}].map(s=>`<div class="end-stat"><span class="l">${s.l}</span><span class="v" style="color:${s.v<=15||s.v>=85?'var(--red)':'var(--text)'}">${s.v}</span></div>`).join('')}
