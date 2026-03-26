@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f14">
+<meta name="description" content="Swipe to survive corporate America. A satirical card game about tech life.">
+<title>VESTED - Swipe to Survive Corporate America</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f14;--card-bg:#1a1a24;--card-border:rgba(255,255,255,0.06);--text:#e8e8ef;--dim:rgba(255,255,255,0.4);--muted:rgba(255,255,255,0.25);--green:#34d399;--red:#f87171;--orange:#fb923c;--yellow:#fbbf24;--cyan:#22d3ee;--purple:#a78bfa;--maxw:420px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;justify-content:center}
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+
+/* Desktop: phone-sized container centered */
+.app{width:100%;max-width:var(--maxw);height:100dvh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+@media(min-width:500px){
+  .app{border-left:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);box-shadow:0 0 80px rgba(0,0,0,.5)}
+  body{background:#08080c}
+}
+
+.screen{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.screen.active{display:flex}
+
+/* ===== NUX ===== */
+#nux{gap:24px;text-align:center}
+.nux-page{display:none;flex-direction:column;align-items:center;gap:20px;animation:fadeIn .3s}
+.nux-page.active{display:flex}
+.nux-icon{font-size:3.5rem}
+.nux-title{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:800}
+.nux-body{font-size:.9rem;color:rgba(255,255,255,.7);line-height:1.6;max-width:280px}
+.nux-dots{display:flex;gap:8px}
+.nux-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .2s}
+.nux-dot.active{background:var(--text)}
+.btn-nux{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;letter-spacing:2px;color:var(--bg);background:var(--text);border:none;padding:14px 40px;border-radius:12px;cursor:pointer;transition:all .2s}
+.btn-nux:hover{transform:scale(1.03)}
+.btn-skip{font-size:.8rem;color:var(--dim);background:none;border:none;cursor:pointer;padding:8px}
+.btn-skip:hover{color:var(--text)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ===== MENU ===== */
+#menu{gap:28px;text-align:center}
+#menu h1{font-family:'JetBrains Mono',monospace;font-size:clamp(2.5rem,10vw,3.5rem);font-weight:800;letter-spacing:10px;background:linear-gradient(135deg,var(--text),rgba(255,255,255,.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:.85rem;color:var(--dim);letter-spacing:1px}
+.best-run{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);padding:6px 14px;border:1px solid var(--card-border);border-radius:8px}
+.btn-start{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;letter-spacing:3px;color:var(--bg);background:var(--text);border:none;padding:16px 48px;border-radius:12px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-start:hover{transform:scale(1.04);box-shadow:0 0 40px rgba(255,255,255,.12)}
+.btn-start:active{transform:scale(.97)}
+.disclaimer{font-size:.6rem;color:var(--muted);max-width:280px;line-height:1.4;text-align:center}
+
+/* ===== COMPANY SELECT ===== */
+#company{gap:24px;text-align:center}
+#company h2{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:800;letter-spacing:3px}
+#company .sub{font-size:.8rem;color:var(--dim);margin-top:-12px}
+.company-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px}
+.company-btn{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.company-btn:hover{border-color:rgba(255,255,255,.12);transform:translateY(-2px)}
+.company-btn:active{transform:scale(.97)}
+.company-btn .logo{font-size:1.8rem}
+.company-btn .name{font-size:.8rem;font-weight:700}
+.company-btn .tag{font-size:.65rem;color:var(--dim);line-height:1.3}
+.company-divider{grid-column:1/-1;height:1px;background:rgba(255,255,255,.06);margin:2px 0}
+
+/* ===== GAME ===== */
+#game{padding:12px 16px;gap:0;justify-content:flex-start;overflow:hidden}
+.game-header{display:flex;justify-content:space-between;align-items:center;width:100%;padding:0 4px 6px}
+.week{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--dim)}
+.stage{font-size:.78rem;font-weight:700}
+.stats-row{display:flex;gap:14px;width:100%;justify-content:center;margin-bottom:8px}
+.stat{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.stat-icon{font-size:1.1rem}
+.stat-bar{width:100%;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.stat-fill{height:100%;border-radius:3px;transition:width .4s cubic-bezier(.34,1.56,.64,1),background .3s}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);transition:color .3s,transform .15s}
+.stat-value.bounce{transform:scale(1.4)}
+.stat-value.danger{color:var(--red);font-weight:700}
+.promo-banner{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;letter-spacing:2px;color:var(--green);background:rgba(52,211,153,.1);padding:5px 14px;border-radius:20px;opacity:0;transition:opacity .3s;margin-bottom:4px;text-align:center}
+.promo-banner.visible{opacity:1}
+.card-area{flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative;touch-action:none;min-height:0}
+.card{width:100%;background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;cursor:grab;transition:border-color .2s;user-select:none;max-height:55vh;overflow-y:auto}
+.card:active{cursor:grabbing}
+.card.dragging{transition:none}
+.card.swipe-left{border-color:var(--orange)}
+.card.swipe-right{border-color:var(--cyan)}
+.card .expansion{font-family:'JetBrains Mono',monospace;font-size:.5rem;font-weight:800;letter-spacing:1.5px;color:var(--orange);padding:2px 8px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);border-radius:20px}
+.card .character{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:2px}
+.card .scenario{font-size:.9rem;line-height:1.6}
+.card .scenario b{color:var(--yellow)}
+.card .hint{font-size:.65rem;color:var(--muted)}
+.card .options{display:flex;justify-content:space-between;width:100%;gap:8px;font-size:.7rem;color:var(--dim)}
+.card .opt-l{text-align:left;transition:color .2s}
+.card .opt-r{text-align:right;transition:color .2s}
+.card.swipe-right .opt-l{color:var(--cyan)}
+.card.swipe-left .opt-r{color:var(--orange)}
+.roast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--yellow);background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.12);border-radius:8px;padding:6px 14px;text-align:center;max-width:300px;opacity:0;transition:opacity .3s;pointer-events:none;width:max-content}
+.roast.visible{opacity:1}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;cursor:pointer}
+.overlay.active{display:flex}
+.csq-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:18px;padding:28px;max-width:320px;text-align:center}
+.csq-box .lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:2px;color:rgba(248,113,113,.5);text-transform:uppercase;margin-bottom:14px}
+.csq-box .txt{font-size:.9rem;line-height:1.6;margin-bottom:12px}
+.csq-box .tap{font-size:.65rem;color:var(--muted)}
+.tint{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50}
+.tint.flash{opacity:1}
+
+/* End screens */
+#death,#victory{gap:20px;text-align:center}
+#death h2{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:800;color:var(--red)}
+#victory h2{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:800;color:var(--green)}
+.end-desc{font-size:.9rem;line-height:1.6;color:var(--dim);max-width:300px}
+.end-score{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted)}
+.end-stats{display:flex;gap:18px}
+.end-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.end-stat .l{font-size:.55rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+.end-stat .v{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700}
+.btn-end{font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;color:var(--bg);background:var(--text);border:none;padding:12px 36px;border-radius:12px;cursor:pointer;transition:all .2s}
+.btn-end:hover{transform:scale(1.03)}
+.btn-sec{font-size:.8rem;color:var(--dim);background:none;border:none;cursor:pointer;padding:6px}
+.btn-sec:hover{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- NUX -->
+<div id="nux" class="screen">
+  <div id="nux-pages"></div>
+  <div class="nux-dots" id="nux-dots"></div>
+  <button class="btn-nux" id="nux-btn" onclick="nuxNext()">Next</button>
+  <button class="btn-skip" onclick="nuxDone()">Skip</button>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="screen">
+  <h1>VESTED</h1>
+  <p class="subtitle">Swipe to survive corporate America</p>
+  <div id="best-run" class="best-run" style="display:none"></div>
+  <button class="btn-start" onclick="showCompanySelect()">START RUN</button>
+  <p class="disclaimer">Satire. All company references are fictional exaggerations.</p>
+</div>
+
+<!-- COMPANY -->
+<div id="company" class="screen">
+  <h2>PICK YOUR POISON</h2>
+  <p class="sub">Where are you selling your soul?</p>
+  <div class="company-grid" id="company-grid"></div>
+  <button class="btn-sec" onclick="show('menu')">Back</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="game-header"><span class="week" id="week"></span><span class="stage" id="stage"></span></div>
+  <div class="stats-row" id="stats"></div>
+  <div class="promo-banner" id="promo"></div>
+  <div class="card-area"><div class="card" id="card"></div><div class="roast" id="roast"></div></div>
+</div>
+
+<!-- CONSEQUENCE -->
+<div class="overlay" id="csq" onclick="dismissCsq()"><div class="csq-box"><div class="lbl">Remember that decision?</div><div class="txt" id="csq-txt"></div><div class="tap">tap to continue</div></div></div>
+<div class="tint" id="tint"></div>
+
+<!-- DEATH -->
+<div id="death" class="screen">
+  <h2 id="d-title"></h2>
+  <p class="end-desc" id="d-desc"></p>
+  <div class="end-stats" id="d-stats"></div>
+  <p class="end-score" id="d-score"></p>
+  <button class="btn-end" onclick="showCompanySelect()">New Run</button>
+  <button class="btn-sec" onclick="show('menu')">Menu</button>
+</div>
+
+<!-- VICTORY -->
+<div id="victory" class="screen">
+  <h2>FULLY VESTED</h2>
+  <p class="end-desc" id="v-quote"></p>
+  <div class="end-stats" id="v-stats"></div>
+  <p class="end-score" id="v-score"></p>
+  <button class="btn-end" onclick="showCompanySelect()">New Run</button>
+  <button class="btn-sec" onclick="show('menu')">Menu</button>
+</div>
+
+</div>
+
+<script src="gamedata.js"></script>
+<script>
+// === CONFIG ===
+const STG=[{id:'newHire',n:'New Hire',w:3},{id:'ramping',n:'Ramping',w:8},{id:'contributing',n:'Contributing',w:17},{id:'senior',n:'Senior',w:33},{id:'staff',n:'Staff',w:49}];
+const WIN=50,SC=[.5,.7,1,1.2,1.4];
+const WINQ=["Four years. You actually did it.","Your RSUs have fully vested. Time to rest and vest... wait.","Congratulations. You are now too expensive to keep.","You survived. The equity was worth it. Barely.","Fully vested. LinkedIn status: Open to Work."];
+const PIP=new Set(['sr_stack_rank','staff_mystery_meeting','blind_glassdoor_revenge','blind_pip','amazon_pip_culture','meta_perf_rating','sr_pip_scare']);
+const DTXT={sanityLow:'Burnout',sanityHigh:'Too lucid',tcLow:'Broke',tcHigh:'Golden handcuffs',reputationLow:'Invisible',reputationHigh:'Target',stabilityLow:'Laid off',stabilityHigh:'Trapped'};
+const LVL={newHire:'L3',ramping:'L3',contributing:'L4',senior:'L5',staff:'L6'};
+const BTC={newHire:120,ramping:150,contributing:220,senior:350,staff:520};
+const CPFX=['amazon_','meta_','google_','apple_','netflix_'];
+
+// === NUX ===
+const NUX_PAGES=[
+  {i:'\u{1F4BC}',t:'Welcome to Corporate America',b:'Great TC. Unlimited PTO. Free snacks.\n\nWhat could go wrong?'},
+  {i:'\u{1F449}',t:'Swipe to Survive',b:'Every card is a corporate scenario.\nSwipe left or right. Every choice has consequences.'},
+  {i:'\u{2620}\u{FE0F}',t:'Balance or Die',b:'Sanity. TC. Reputation. Stability.\nToo high or too low = game over.'},
+  {i:'\u{1F4B0}',t:'Survive to Vest',b:'Make it through without breaking.\nFully vest and you win. Most don\'t.'},
+  {i:'\u{1F525}',t:'Ready?',b:'Your equity isn\'t going to vest itself.'}
+];
+let nuxPage=0;
+
+function initNux(){
+  if(localStorage.getItem('vested-nux-done')){show('menu');return}
+  const c=document.getElementById('nux-pages');
+  const d=document.getElementById('nux-dots');
+  c.innerHTML=NUX_PAGES.map((p,i)=>`<div class="nux-page${i===0?' active':''}" id="np${i}"><span class="nux-icon">${p.i}</span><h3 class="nux-title">${p.t}</h3><p class="nux-body">${esc(p.b).replace(/\n/g,'<br>')}</p></div>`).join('');
+  d.innerHTML=NUX_PAGES.map((_,i)=>`<span class="nux-dot${i===0?' active':''}"></span>`).join('');
+  show('nux');
+}
+function nuxNext(){
+  nuxPage++;
+  if(nuxPage>=NUX_PAGES.length){nuxDone();return}
+  document.querySelectorAll('.nux-page').forEach((p,i)=>p.classList.toggle('active',i===nuxPage));
+  document.querySelectorAll('.nux-dot').forEach((d,i)=>d.classList.toggle('active',i===nuxPage));
+  document.getElementById('nux-btn').textContent=nuxPage===NUX_PAGES.length-1?"Let's Go":'Next';
+}
+function nuxDone(){localStorage.setItem('vested-nux-done','1');show('menu')}
+
+// === STATE ===
+let st,dk,used,pend,bst,co;
+function gs(w){for(const s of STG)if(w<=s.w)return s;return STG[STG.length-1]}
+function gi(w){return STG.indexOf(gs(w))}
+function cl(v){return Math.max(0,Math.min(100,v))}
+function sh(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// === COMPANY SELECT ===
+function showCompanySelect(){
+  const g=document.getElementById('company-grid');
+  const keys=['amazon','meta','google'];
+  let html='';
+  for(const k of keys){
+    const c=COMPANIES[k];
+    html+=`<div class="company-btn" onclick="startGame('${k}')"><span class="logo">${c.logo}</span><span class="name">${esc(c.name)}</span><span class="tag">${esc(c.tagline)}</span></div>`;
+  }
+  html+='<div class="company-divider"></div>';
+  const gen=COMPANIES.generic;
+  html+=`<div class="company-btn" style="grid-column:1/-1" onclick="startGame('generic')"><span class="logo">${gen.logo}</span><span class="name">${esc(gen.name)}</span><span class="tag">${esc(gen.tagline)}</span></div>`;
+  g.innerHTML=html;
+  show('company');
+}
+
+// === APPLY COMPANY FLAVOR ===
+function applyFlavor(text,company){
+  const reps=COMPANIES[company]?.replacements||{};
+  let result=text;
+  const sorted=Object.entries(reps).sort((a,b)=>b[0].length-a[0].length);
+  for(const[old,nw]of sorted)result=result.split(old).join(nw);
+  return result;
+}
+
+// === START ===
+function startGame(company){
+  co=company;
+  st={sanity:50,tc:50,reputation:50,stability:50,week:1,maxRep:50};
+  // Filter cards by company
+  let all=CARDS.filter(c=>!c.isTutorial);
+  if(company==='generic'){all=all.filter(c=>!CPFX.some(p=>c.id.startsWith(p)))}
+  else{all=all.filter(c=>!CPFX.some(p=>c.id.startsWith(p))||c.id.startsWith(COMPANIES[company]?.name?.toLowerCase()+'_')||c.id.startsWith(company+'_'))}
+  dk=sh([...all]);used=new Set();pend=[];bst=0;
+  show('game');renderStats();drawCard();
+}
+
+// === DRAW ===
+function drawCard(){
+  const si=gi(st.week);
+  let av=dk.filter(c=>{if(used.has(c.id))return false;const mi=STG.findIndex(s=>s.id===c.minStage);if(mi<0||mi>si)return false;if(c.maxStage){const xi=STG.findIndex(s=>s.id===c.maxStage);if(xi>=0&&xi<si)return false}return true});
+  if(bst>=2){const nb=av.filter(c=>!c.id.startsWith('boost_'));if(nb.length)av=nb}
+  if(st.stability>40){const f=av.filter(c=>!PIP.has(c.id));if(f.length)av=f}
+  if(!av.length){used.clear();return drawCard()}
+  const card=av[Math.floor(Math.random()*av.length)];
+  used.add(card.id);bst=card.id.startsWith('boost_')?bst+1:0;
+  renderCard(card);
+}
+
+// === RENDER ===
+function renderStats(){
+  const s=[{k:'sanity',i:'\u{1F9E0}'},{k:'tc',i:'\u{1F4B0}'},{k:'reputation',i:'\u{1F451}'},{k:'stability',i:'\u{1F6E1}\u{FE0F}'}];
+  let h='';for(const x of s){const v=st[x.k],d=v<=15||v>=85,c=d?'var(--red)':v<=30||v>=70?'var(--orange)':'var(--green)';h+=`<div class="stat"><span class="stat-icon">${x.i}</span><div class="stat-bar"><div class="stat-fill" style="width:${v}%;background:${c}"></div></div><span class="stat-value${d?' danger':''}" id="sv-${x.k}">${v}</span></div>`}
+  document.getElementById('stats').innerHTML=h;
+  document.getElementById('week').textContent=`Week ${st.week}`;
+  document.getElementById('stage').textContent=gs(st.week).n;
+}
+
+function renderCard(card){
+  const el=document.getElementById('card');
+  const pol=card.id.startsWith('politics_');
+  const sc=applyFlavor(card.scenario,co).replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+  const ch=applyFlavor(card.character,co);
+  const ll=applyFlavor(card.leftOption.label,co);
+  const rl=applyFlavor(card.rightOption.label,co);
+  el.innerHTML=`${pol?'<span class="expansion">OFFICE POLITICS</span>':''}<span class="character">${esc(ch)}</span><p class="scenario">${sc}</p><span class="hint">swipe to decide</span><div class="options"><span class="opt-l">\u2190 ${esc(ll)}</span><span class="opt-r">${esc(rl)} \u2192</span></div>`;
+  el.className='card';el.style.transform='';el.style.opacity='1';el._c=card;
+  setupSwipe(el);
+}
+
+function bounce(k){const e=document.getElementById('sv-'+k);if(!e)return;e.classList.add('bounce');setTimeout(()=>e.classList.remove('bounce'),150)}
+
+// === SWIPE ===
+function setupSwipe(el){
+  let sx=0,cx=0,dr=false;
+  function oS(e){dr=true;sx=e.touches?e.touches[0].clientX:e.clientX;el.classList.add('dragging')}
+  function oM(e){if(!dr)return;e.preventDefault();const x=e.touches?e.touches[0].clientX:e.clientX;cx=x-sx;el.style.transform=`translateX(${cx}px) rotate(${cx/25}deg)`;el.classList.remove('swipe-left','swipe-right');if(cx>40)el.classList.add('swipe-right');else if(cx<-40)el.classList.add('swipe-left')}
+  function oE(){if(!dr)return;dr=false;el.classList.remove('dragging');if(Math.abs(cx)>80){const dir=cx>0?'left':'right';const fx=cx>0?500:-500;el.style.transition='transform .25s ease-out,opacity .25s';el.style.transform=`translateX(${fx}px) rotate(${fx/25}deg)`;el.style.opacity='0';setTimeout(()=>proc(dir,el._c),250)}else{el.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';el.style.transform='';el.classList.remove('swipe-left','swipe-right')}cx=0}
+  el.onmousedown=oS;el.onmousemove=oM;el.onmouseup=oE;el.onmouseleave=oE;
+  el.addEventListener('touchstart',oS,{passive:true});el.addEventListener('touchmove',oM,{passive:false});el.addEventListener('touchend',oE);
+}
+
+// Also support keyboard
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('game').classList.contains('active'))return;
+  const el=document.getElementById('card');if(!el._c)return;
+  if(e.key==='ArrowLeft'){el.style.transition='transform .25s,opacity .25s';el.style.transform='translateX(-500px) rotate(-20deg)';el.style.opacity='0';setTimeout(()=>proc('right',el._c),250)}
+  if(e.key==='ArrowRight'){el.style.transition='transform .25s,opacity .25s';el.style.transform='translateX(500px) rotate(20deg)';el.style.opacity='0';setTimeout(()=>proc('left',el._c),250)}
+});
+
+// === PROCESS ===
+function proc(dir,card){
+  const opt=dir==='right'?card.rightOption:card.leftOption;
+  const prev=gs(st.week);
+  applyFx(opt.effects);
+  if(opt.hiddenConsequences)for(const h of opt.hiddenConsequences)pend.push({...h,f:h.delay});
+  st.week++;
+  let fired=null;const still=[];
+  for(const c of pend){c.f--;if(c.f<=0){applyFx(c.effects);fired=c.description}else still.push(c)}
+  pend.length=0;pend.push(...still);
+  flashTint(opt.effects);renderStats();
+  const death=chkDeath();if(death){showDeath(death);return}
+  if(st.week>=WIN){showVictory();return}
+  if(fired){document.getElementById('csq-txt').textContent=fired;document.getElementById('csq').classList.add('active');return}
+  const nw=gs(st.week);if(nw.id!==prev.id)showPromo(nw.n);
+  if(opt.roast&&Math.random()<.25){showRoast(applyFlavor(opt.roast,co));return}
+  drawCard();
+}
+
+function applyFx(fx){const sc=SC[gi(st.week)]||1;for(const[k,d]of Object.entries(fx)){if(!(k in st))continue;st[k]=cl(st[k]+(d<0?Math.round(d*sc):d));if(k==='reputation')st.maxRep=Math.max(st.maxRep,st[k]);bounce(k)}}
+function chkDeath(){for(const[k,l,h]of[['sanity','sanityLow','sanityHigh'],['tc','tcLow','tcHigh'],['reputation','reputationLow','reputationHigh'],['stability','stabilityLow','stabilityHigh']]){if(st[k]<=0)return l;if(st[k]>=100)return h}return null}
+function flashTint(fx){const s=fx.sanity||0,b=fx.stability||0,r=fx.reputation||0;let c;if(s<=-5)c='rgba(251,146,60,.15)';else if(b<=-5)c='rgba(248,113,113,.15)';else if(s>=5)c='rgba(34,211,238,.15)';else if(r>=5)c='rgba(167,139,250,.15)';if(!c)return;const t=document.getElementById('tint');t.style.background=c;t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),300)}
+function dismissCsq(){document.getElementById('csq').classList.remove('active');const d=chkDeath();if(d){showDeath(d);return}if(st.week>=WIN){showVictory();return}drawCard()}
+function showPromo(n){const e=document.getElementById('promo');e.textContent='PROMOTED TO '+n.toUpperCase();e.classList.add('visible');setTimeout(()=>e.classList.remove('visible'),2000)}
+function showRoast(t){const e=document.getElementById('roast');e.textContent=t;e.classList.add('visible');setTimeout(()=>{e.classList.remove('visible');setTimeout(drawCard,300)},2500)}
+
+// === END ===
+function endHTML(){return[{l:'SAN',v:st.sanity},{l:'TC',v:st.tc},{l:'REP',v:st.reputation},{l:'STB',v:st.stability}].map(s=>`<div class="end-stat"><span class="l">${s.l}</span><span class="v" style="color:${s.v<=15||s.v>=85?'var(--red)':'var(--text)'}">${s.v}</span></div>`).join('')}
+function bsc(dr,win=false){const s=gs(st.week),tc=Math.round(BTC[s.id]*(.6+(st.tc/50)*.4));return`${LVL[s.id]} | $${tc}K TC | ${s.n} | ${st.week} wks | ${win?'FULLY VESTED':(DTXT[dr]||'?')}`}
+function showDeath(r){const s=DEATH_SCREENS[r]||{title:'Game Over',description:'Your career has ended.'};document.getElementById('d-title').textContent=s.title;document.getElementById('d-desc').textContent=s.description;document.getElementById('d-stats').innerHTML=endHTML();document.getElementById('d-score').textContent=bsc(r);saveBest();show('death')}
+function showVictory(){document.getElementById('v-quote').textContent=WINQ[Math.floor(Math.random()*WINQ.length)];document.getElementById('v-stats').innerHTML=endHTML();document.getElementById('v-score').textContent=bsc(null,true);saveBest();show('victory')}
+function saveBest(){try{const o=JSON.parse(localStorage.getItem('vested-best')||'null');if(!o||st.week>o.w)localStorage.setItem('vested-best',JSON.stringify({w:st.week,s:gs(st.week).n}))}catch{}updBest()}
+function updBest(){try{const s=JSON.parse(localStorage.getItem('vested-best'));if(s){const e=document.getElementById('best-run');e.textContent=`Best: Week ${s.w} \u00B7 ${s.s}`;e.style.display='block'}}catch{}}
+
+// INIT
+updBest();initNux();
+</script>
+</body>
+</html>
