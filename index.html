@@ -107,7 +107,8 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .overlay{position:fixed;inset:0;background:rgba(15,15,20,.95);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;cursor:pointer}
 .overlay.active{display:flex}
 .csq-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:18px;padding:28px;max-width:320px;text-align:center}
-.csq-box .lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:2px;color:rgba(248,113,113,.5);text-transform:uppercase;margin-bottom:14px}
+.csq-box .lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:2px;color:rgba(248,113,113,.5);text-transform:uppercase;margin-bottom:8px}
+.csq-box .csq-src{font-size:.8rem;color:rgba(255,255,255,.5);font-style:italic;margin-bottom:12px}
 .csq-box .txt{font-size:.9rem;line-height:1.6;margin-bottom:12px}
 .csq-box .tap{font-size:.65rem;color:var(--muted)}
 .tint{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50}
@@ -167,7 +168,7 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 
 <!-- CONSEQUENCE -->
 <div class="roast-overlay" id="roast-overlay"><p class="roast-text" id="roast-text"></p></div>
-<div class="overlay" id="csq" onclick="dismissCsq()"><div class="csq-box"><div class="lbl">Remember that decision?</div><div class="txt" id="csq-txt"></div><div class="tap">tap to continue</div></div></div>
+<div class="overlay" id="csq" onclick="dismissCsq()"><div class="csq-box"><div class="lbl">Remember that decision?</div><div class="csq-src" id="csq-src"></div><div class="txt" id="csq-txt"></div><div class="tap">tap to continue</div></div></div>
 <div class="tint" id="tint"></div>
 
 <!-- DEATH -->
@@ -356,14 +357,15 @@ function proc(dir,card){
   const opt=dir==='right'?card.rightOption:card.leftOption;
   const prev=gs(st.week);
   applyFx(opt.effects);
-  if(opt.hiddenConsequences)for(const h of opt.hiddenConsequences)pend.push({...h,f:h.delay});
+  if(opt.hiddenConsequences)for(const h of opt.hiddenConsequences)pend.push({...h,f:h.delay,src:card.character});
   st.week++;
   let fired=null;const still=[];
-  for(const c of pend){c.f--;if(c.f<=0){applyFx(c.effects);fired=c.description}else still.push(c)}
+  let firedSrc=null;
+  for(const c of pend){c.f--;if(c.f<=0){applyFx(c.effects);fired=c.description;firedSrc=c.src||null}else still.push(c)}
   pend.length=0;pend.push(...still);
   flashTint(opt.effects);renderStats();
   // Show consequence first — death/win checked on dismiss
-  if(fired){document.getElementById('csq-txt').textContent=fired;document.getElementById('csq').classList.add('active');return}
+  if(fired){document.getElementById('csq-txt').textContent=fired;document.getElementById('csq-src').textContent=firedSrc?'When '+firedSrc+' was involved...':'';document.getElementById('csq').classList.add('active');return}
   const death=chkDeath();if(death){showDeath(death);return}
   if(st.week>=WIN){showVictory();return}
   const nw=gs(st.week);if(nw.id!==prev.id)showPromo(nw.n);
